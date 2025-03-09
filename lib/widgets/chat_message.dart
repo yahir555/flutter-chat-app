@@ -1,73 +1,81 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:chat/services/auth_service.dart';
+import 'package:provider/provider.dart';
 
- class ChatMessage extends StatelessWidget {
+class ChatMessage extends StatelessWidget {
 
   final String texto;
   final String uid;
   final AnimationController animationController;
 
   const ChatMessage({
-    super.key, 
+    Key? key, 
     required this.texto, 
     required this.uid, 
-    required this.animationController 
-    
-    }); 
+    required this.animationController
+  }) : super(key: key);
 
+  @override
+  Widget build(BuildContext context) {
 
-   
-   @override
-   Widget build(BuildContext context) {
-     return FadeTransition(
+    final authService = Provider.of<AuthService>(context, listen: false);
+
+    // Verifica si el usuario está logueado (no nulo)
+    final usuario = authService.usuario;
+
+    if (usuario == null) {
+      // Aquí podrías mostrar un mensaje de error o un widget vacío
+      return Container(); // o algún otro Widget que indique que no hay usuario
+    }
+
+    return FadeTransition(
       opacity: animationController,
-       child: SizeTransition(
-        sizeFactor: CurvedAnimation(parent: animationController, curve: Curves.easeOut),
-         child: Container(
-          child: this.uid == '123'
+      child: SizeTransition(
+        sizeFactor: CurvedAnimation(parent: animationController, curve: Curves.easeOut ),
+        child: Container(
+          child: this.uid == usuario.uid
           ? _myMessage()
           : _notMyMessage(),
-         ),
-       ),
-     );
-   }
-Widget _myMessage() {
-  return Align(
-    alignment: Alignment.centerRight, // Debería estar a la derecha
-    child: Container(
-      padding: EdgeInsets.all(8.0),
-      margin: EdgeInsets.only(
-        right: 5, // Ajustar margen derecho
-        bottom: 5,
-        left: 50, // Para evitar que ocupe toda la pantalla
+        ),
       ),
-      child: Text(this.texto, style: TextStyle(color: Colors.white)),
-      decoration: BoxDecoration(
-        color: Color(0xff4D9EF6), // Azul para el mensaje propio
-        borderRadius: BorderRadius.circular(20),
+    );
+  }
+
+  Widget _myMessage() {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        padding: EdgeInsets.all(8.0),
+        margin: EdgeInsets.only(
+          right: 5,
+          bottom: 5,
+          left: 50
+        ),
+        child: Text( this.texto, style: TextStyle( color: Colors.white ), ),
+        decoration: BoxDecoration(
+          color: Color(0xff4D9EF6),
+          borderRadius: BorderRadius.circular(20)
+        ),
       ),
-    ),
-  );
+    );
+  }
+
+  Widget _notMyMessage() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: EdgeInsets.all(8.0),
+        margin: EdgeInsets.only(
+          left: 5,
+          bottom: 5,
+          right: 50
+        ),
+        child: Text( this.texto, style: TextStyle( color: Colors.black87 ), ),
+        decoration: BoxDecoration(
+          color: Color(0xffE4E5E8),
+          borderRadius: BorderRadius.circular(20)
+        ),
+      ),
+    );
+  }
 }
-
-Widget _notMyMessage() {
-  return Align(
-    alignment: Alignment.centerLeft, // Debería estar a la izquierda
-    child: Container(
-      padding: EdgeInsets.all(8.0),
-      margin: EdgeInsets.only(
-        left: 5, // Ajustar margen izquierdo
-        bottom: 5,
-        right: 50, // Para evitar que ocupe toda la pantalla
-      ),
-      child: Text(this.texto, style: TextStyle(color: Colors.black87)),
-      decoration: BoxDecoration(
-        color: Color(0xffE4E5E8), // Gris para los mensajes de otros
-        borderRadius: BorderRadius.circular(20),
-      ),
-    ),
-  );
-}
-
-
-
- }

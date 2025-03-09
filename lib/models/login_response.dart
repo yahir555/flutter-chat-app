@@ -16,6 +16,7 @@ class LoginResponse {
         required this.token,
     });
 
+
     bool ok;
     Usuario usuario;
     String token;
@@ -32,4 +33,5 @@ class LoginResponse {
         "token": token,
     };
 }
+
 

@@ -38,9 +38,13 @@ class AuthService with ChangeNotifier {
 
     final data = {'email': email, 'password': password};
 
-    final uri = Uri.parse('${Environment.apiUrl}/login');
-    final resp = await http.post(uri,
-        body: jsonEncode(data), headers: {'Content-Type': 'application/json'});
+    final resp = await http.post(
+      Uri.parse('${Environment.apiUrl}/login'),
+      body: jsonEncode(data),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
 
     this.autenticando = false;
 
@@ -61,43 +65,41 @@ class AuthService with ChangeNotifier {
 
     final data = {'nombre': nombre, 'email': email, 'password': password};
 
-    final uri = Uri.parse('${Environment.apiUrl}/login/new');
-    final resp = await http.post(uri,
+
+    final resp = await http.post( Uri.parse(
+          '${Environment.apiUrl}/login'),
         body: jsonEncode(data), headers: {'Content-Type': 'application/json'});
 
     this.autenticando = false;
 
     if (resp.statusCode == 200) {
-      try {
-        final loginResponse = loginResponseFromJson(resp.body);
-        this.usuario = loginResponse.usuario;
-        await this._guardarToken(loginResponse.token);
-        return true;
-      } catch (e) {
-        print('Error al decodificar el JSON: $e');
-        return false;
-      }
-    } else {
-      // Imprime el código de estado HTTP
-      print('Código de estado: ${resp.statusCode}');
+      final loginResponse = loginResponseFromJson(resp.body);
+      this.usuario = loginResponse.usuario;
+      await this._guardarToken(loginResponse.token);
 
-      try {
-        // Intenta decodificar la respuesta, pero si no es JSON, captura el error
-        final respBody = jsonDecode(resp.body);
-        return respBody['msg'] ?? 'Error desconocido';
-      } catch (e) {
-        print('Error al procesar la respuesta del servidor: $e');
-        return 'Error al procesar la respuesta del servidor';
-      }
+      return true;
+    } else {
+      final respBody = jsonDecode(resp.body);
+      return respBody['msg'];
     }
   }
 
-  Future<bool> isLoggedIn() async {
-    final token = await this._storage.read(key: 'token') ?? '';
+Future<bool> isLoggedIn() async {
+  final token = await this._storage.read(key: 'token');
+  
+  // Verificamos si el token es nulo o vacío
+  if (token == null || token.isEmpty) {
+    return false; // Token no existe o está vacío, el usuario no está autenticado
+  }
 
-    final uri = Uri.parse('${Environment.apiUrl}/login/renew');
-    final resp = await http.get(uri,
-        headers: {'Content-Type': 'application/json', 'x-token': token});
+  try {
+    final resp = await http.get(
+      Uri.parse('${Environment.apiUrl}/login'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-token': token, // Usamos el token si es válido
+      },
+    );
 
     if (resp.statusCode == 200) {
       final loginResponse = loginResponseFromJson(resp.body);
@@ -105,10 +107,15 @@ class AuthService with ChangeNotifier {
       await this._guardarToken(loginResponse.token);
       return true;
     } else {
-      this.logout();
+      this.logout(); // Si la respuesta es incorrecta, cerramos sesión
       return false;
     }
+  } catch (e) {
+    print("Error en la solicitud: $e");
+    return false; // Si hay un error, retornamos false
   }
+}
+
 
   Future _guardarToken(String token) async {
     return await _storage.write(key: 'token', value: token);
@@ -116,5 +123,5 @@ class AuthService with ChangeNotifier {
 
   Future logout() async {
     await _storage.delete(key: 'token');
-   }
+  }
 }
